@@ -19,17 +19,29 @@ limitations under the License.
 
 namespace tensorflow {
 
-SYCLAllocator::~SYCLAllocator() { }
+SYCLAllocator::~SYCLAllocator() {
+  if(sycl_device_) {
+    delete sycl_device_;
+  }
+}
 
 string SYCLAllocator::Name() { return "device:SYCL"; }
 
 void *SYCLAllocator::AllocateRaw(size_t alignment, size_t num_bytes) {
-  auto p = device_->allocate(num_bytes);
+  assert(sycl_device_);
+  if (num_bytes == 0) {
+    return sycl_device_->allocate(1);
+  }
+  auto p = sycl_device_->allocate(num_bytes);
   return p;
 }
 
-void SYCLAllocator::DeallocateRaw(void *ptr) { device_->deallocate(ptr); }
+void SYCLAllocator::DeallocateRaw(void *ptr) {
+  if (sycl_device_) {
+    sycl_device_->deallocate(ptr);
+  }
+}
 
-} // namespace tensorflow
+}  // namespace tensorflow
 
-#endif // TENSORFLOW_USE_SYCL
+#endif  // TENSORFLOW_USE_SYCL
